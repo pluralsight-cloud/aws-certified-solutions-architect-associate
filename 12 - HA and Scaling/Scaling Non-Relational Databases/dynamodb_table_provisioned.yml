@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: DynamoDB Table for Terraform State Locking with Provisioned Capacity.
+
+Resources:
+  TerraformStateLockTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "TerraformStateLock"
+      AttributeDefinitions:
+        - AttributeName: "LockID"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "LockID"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
