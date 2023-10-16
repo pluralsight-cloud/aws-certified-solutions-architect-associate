@@ -3,7 +3,7 @@ import boto3
 import os
 
 sqs = boto3.client("sqs")
-DLQ_URL = os.environ["DLQ_URL"]
+QUEUE_URL = os.environ["QUEUE_URL"]
 
 
 def lambda_handler(event, context):
@@ -22,7 +22,11 @@ def lambda_handler(event, context):
                     "customerEmail",
                 ]
             ):
-                send_to_dlq(message, "Invalid message format")
+                # sends failed messages back to the SQS queue if needed
+                sqs.send_message(QueueUrl=QUEUE_URL, MessageBody=json.dumps(message))
+                print(
+                    "Failed to process message. Invalid or missing fields. Returning to queue."
+                )
                 continue
 
             # Create and log the formatted string
@@ -41,13 +45,3 @@ def lambda_handler(event, context):
             continue
 
     return {"statusCode": 200, "body": "Processing complete"}
-
-
-def send_to_dlq(message, reason):
-    try:
-        sqs.send_message(
-            QueueUrl=DLQ_URL,
-            MessageBody=json.dumps({"originalEvent": message, "failureReason": reason}),
-        )
-    except Exception as e:
-        print(f"Failed to send message to DLQ: {e}")
