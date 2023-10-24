@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create a VPC with EC2 instance and IAM role for Systems Manager in us-east-1. No key pairs.
+
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: MyVPC
+
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyInternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      InternetGatewayId:
+        Ref: MyInternetGateway
+
+  MyPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: us-east-1a
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MyPublicSubnet1
+
+  MyPublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: us-east-1b
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MyPublicSubnet2
+
+  MyPublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: us-east-1c
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MyPublicSubnet3
+
+  SystemsManagerEC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SystemsManagerEC2Role2
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: Name
+          Value: SystemsManagerEC2Role
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.small
+      SecurityGroupIds:
+        - !GetAtt MySecurityGroup.GroupId
+      SubnetId:
+        Ref: MyPublicSubnet1
+      IamInstanceProfile:
+        Name:
+          Fn::GetAtt:
+            - SystemsManagerEC2Role
+            - Arn
+      Tags:
+        - Key: Name
+          Value: server
+
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH and RDP access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: 0.0.0.0/0
