@@ -108,3 +108,11 @@ Resources:
           FromPort: "22"
           ToPort: "22"
           CidrIp: 0.0.0.0/0
+
+  Parameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /dev/squid_conf
+      Type: String
+      Value: aHR0cF9wb3J0IDMxMjgKCmFjbCBsb2NhbG5ldCBzcmMgMTAuMC4wLjAvOApodHRwX2FjY2VzcyBhbGxvdyBsb2NhbG5ldAoKY2FjaGVfZGlyIHVmcyAvdmFyL3Nwb29sL3NxdWlkIDEwMCAxNiAyNTYKCmNhY2hlX21lbSAyNTYgTUIKbWF4aW11bV9vYmplY3Rfc2l6ZV9pbl9tZW1vcnkgMzIgS0IKbWF4aW11bV9vYmplY3Rfc2l6ZSAxMDI0IE1CCgphY2Nlc3NfbG9nIC92YXIvbG9nL3NxdWlkL2FjY2Vzcy5sb2cgc3F1aWQK
+      Tier: Standard

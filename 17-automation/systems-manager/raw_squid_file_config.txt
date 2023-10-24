@@ -1,0 +1,12 @@
+http_port 3128
+
+acl localnet src 10.0.0.0/8
+http_access allow localnet
+
+cache_dir ufs /var/spool/squid 100 16 256
+
+cache_mem 256 MB
+maximum_object_size_in_memory 32 KB
+maximum_object_size 1024 MB
+
+access_log /var/log/squid/access.log squid
