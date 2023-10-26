@@ -1,0 +1,2 @@
+# Runs the cloudwatch-agent wizard
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
