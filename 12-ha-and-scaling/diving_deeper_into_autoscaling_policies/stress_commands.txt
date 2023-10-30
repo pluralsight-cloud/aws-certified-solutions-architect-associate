@@ -1,0 +1,11 @@
+# Install the stress toolset
+sudo yum install stress -y
+
+# Alternate install (AML2023)
+sudo dnf install stress -y
+
+# List CPU count
+lscpu
+
+# Run the stress test
+stress --cpu 1
