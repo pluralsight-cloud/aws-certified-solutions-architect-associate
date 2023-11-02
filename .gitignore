@@ -162,6 +162,10 @@ cython_debug/
 # Local .terraform directories
 **/.terraform/*
 
+# terraform state locks
+**/.terraform.lock.hcl
+.terraform.lock.hcl
+
 # .tfstate files
 *.tfstate
 *.tfstate.*
