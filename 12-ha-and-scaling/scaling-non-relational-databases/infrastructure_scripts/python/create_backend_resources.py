@@ -34,7 +34,7 @@ try:
         TableName=table_name,
         KeySchema=[{"AttributeName": "LockID", "KeyType": "HASH"}],
         AttributeDefinitions=[{"AttributeName": "LockID", "AttributeType": "S"}],
-        ProvisionedThroughput={"ReadCapacityUnits": 2, "WriteCapacityUnits": 2},
+        ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
     )
 except:
     logger.error(f"Failed to create DynamoDB table {table_name}")
