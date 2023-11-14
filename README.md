@@ -6,6 +6,8 @@ Files meant to supplement the learning journey for the SAA exam.
 
 **SAA-C03**
 
+![saa-c03](./poster.png)
+
 ## Course Links
 
 [A Cloud Guru](https://learn.acloud.guru/course/certified-solutions-architect-associate/dashboard)
