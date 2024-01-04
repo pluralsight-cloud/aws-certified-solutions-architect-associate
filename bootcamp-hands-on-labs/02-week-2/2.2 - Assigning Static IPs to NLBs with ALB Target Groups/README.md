@@ -1,0 +1,1 @@
+# 2.2 - Assigning Static IPs to NLBs with ALB Target Groups
