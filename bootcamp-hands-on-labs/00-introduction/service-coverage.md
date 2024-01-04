@@ -1,6 +1,8 @@
 
 # In-Scope AWS Services
 
+This document is meant to be a best-effort note of  which services are covered within the projects nested within this bootcamp.
+
 ## Key
 
 ✅ = Used
