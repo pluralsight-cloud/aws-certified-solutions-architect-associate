@@ -1,0 +1,292 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates a three-tiered VPC with IGW and NAT GW in place.
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Public Subnet AZ A
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs:
+              Ref: AWS::Region
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Public Subnet AZ B
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs:
+              Ref: AWS::Region
+  PublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Public Subnet AZ C
+      AvailabilityZone:
+        Fn::Select:
+          - 2
+          - Fn::GetAZs:
+              Ref: AWS::Region
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.10.0/24
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Private Subnet AZ A
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs:
+              Ref: AWS::Region
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.11.0/24
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Private Subnet AZ B
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs:
+              Ref: AWS::Region
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.12.0/24
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Private Subnet AZ C
+      AvailabilityZone:
+        Fn::Select:
+          - 2
+          - Fn::GetAZs:
+              Ref: AWS::Region
+  RouteTablePublic:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Public Route Table
+  RouteTablePublicAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTablePublic
+      SubnetId:
+        Ref: PublicSubnet1
+  RouteTablePublicAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTablePublic
+      SubnetId:
+        Ref: PublicSubnet2
+  RouteTablePublicAssociation3:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTablePublic
+      SubnetId:
+        Ref: PublicSubnet3
+  RouteTablePublicRoute0:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId:
+        Ref: RouteTablePublic
+      GatewayId:
+        Ref: Igw
+  RouteTablePrivate1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Private Route Table A
+  RouteTablePrivate1Association1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTablePrivate1
+      SubnetId:
+        Ref: PrivateSubnet1
+  RouteTablePrivate1Route0:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId:
+        Ref: RouteTablePrivate1
+      NatGatewayId:
+        Ref: NatGw1
+  RouteTablePrivate2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Private Route Table B
+  RouteTablePrivate2Association1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTablePrivate2
+      SubnetId:
+        Ref: PrivateSubnet2
+  RouteTablePrivate2Route0:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId:
+        Ref: RouteTablePrivate2
+      NatGatewayId:
+        Ref: NatGw1
+  RouteTablePrivate3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value: Private Route Table C
+  RouteTablePrivate3Association1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteTablePrivate3
+      SubnetId:
+        Ref: PrivateSubnet3
+  RouteTablePrivate3Route0:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId:
+        Ref: RouteTablePrivate3
+      NatGatewayId:
+        Ref: NatGw1
+  Igw:
+    Type: AWS::EC2::InternetGateway
+    Properties: { }
+  IGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: VPC
+      InternetGatewayId:
+        Ref: Igw
+  NatGw1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      SubnetId:
+        Ref: PublicSubnet1
+      AllocationId:
+        Fn::GetAtt:
+          - NatGw1ElasticIP
+          - AllocationId
+      Tags:
+        - Key: Name
+          Value: NAT GW A
+  NatGw1ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  myVPCEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: VPC
+    Properties:
+      GroupDescription: SG to allow pings, http, and ssh from everywhere
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: 8
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+  
+  SystemsManagerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref SystemsManagerRole
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.small
+      ImageId: !Ref LatestAmiId
+      IamInstanceProfile: !Ref InstanceProfile
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet:
+            - Ref: myVPCEC2SecurityGroup
+          SubnetId: !Ref PublicSubnet1
+
+Parameters:
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+Metadata: { }
+Conditions: { }

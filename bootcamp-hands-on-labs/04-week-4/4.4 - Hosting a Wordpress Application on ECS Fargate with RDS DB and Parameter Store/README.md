@@ -1,0 +1,1 @@
+# 4.4 - Hosting a Wordpress Application on ECS Fargate with RDS DB and Parameter Store
