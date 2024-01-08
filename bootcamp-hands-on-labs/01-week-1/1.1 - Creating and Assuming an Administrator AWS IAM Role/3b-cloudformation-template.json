@@ -1,0 +1,30 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CloudFormation template to create an IAM role with Administrator access",
+  "Resources": {
+    "CSAAAdministratorRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "CSAA_Administrator",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/cloud_user"
+                }
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "Description": "IAM role with Administrator access"
+      }
+    }
+  }
+}
