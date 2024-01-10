@@ -98,6 +98,8 @@ Use the following text to create a metric filter that matches for any 404 status
 %\b404\b%
 ```
 
+---
+
 ### 3 - Alerting Using the CloudWatch Metric Filter
 
 Now let us set up and alarm based on our recent metric filter.
@@ -124,4 +126,4 @@ Now let us set up and alarm based on our recent metric filter.
 20. For **Alarm name** enter `404-Detections`
 21. Click `Next`
 22. Review the settings and then click `Create alarm`
-23. Wait a few minutes for the data to catchup, and then begin to generate 404 status codes via the made up URL used before. This should trigger your Alarm, sending an SNS message to your email address subscribed to the topic!
+23. Wait a few minutes for the data to get out of an _Insufficient data_ state. Then begin to generate 404 status codes via the made up URL used before. This should trigger your Alarm, sending an SNS message to your email address subscribed to the topic!
