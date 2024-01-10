@@ -2,7 +2,7 @@
 
 ## Steps
 
-### 1. Install and Test the CloudWatch Agent
+### 1 - Install and Test the CloudWatch Agent
 
 Let's go ahead and install the Amazon CloudWatch Agent
 
@@ -67,9 +67,9 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-c
 
 ---
 
-### Setting up the CloudWatch Metric Filter
+### 2 - Setting up the CloudWatch Metric Filter
 
-Now let us test metric filters and alarms within CloudWatch using this new log stream!
+Now let us st up a metric filter within CloudWatch using this new log stream!
 
 1. First, navigate to a fake page within the Apache Web Server in your browser (**Example**: http://3.87.13.214/fake.html)
 2. Navigate back to the CloudWatch Log Stream and view the tailing session. You should see an entry with a `404` in there. We will use this `404` status to create a metric filter and an alarm.
@@ -80,7 +80,14 @@ Now let us test metric filters and alarms within CloudWatch using this new log s
 7. Under the _Test pattern_ section, select your Instance ID from the `Select log data to test` dropdown
 8. Select `Test pattern`. You should get filtered results.
 9. Click `Next`
-10. 
+10. For _Filter name_ enter: `404`
+11. Under _Metric details_, for _Metric namespace_ enter `Apache`. Ensure that `Create new` is enabled.
+12. For _Metric name_ enter `404`
+13. Under _Metric value_ enter the number `1`
+14. Leave _Default value_ blank
+15. For _Unit_ select `Count` from the dropdown menu
+16. Click `Next`
+17. Review and then select `Create metric filter`
 
 
 #### Metric Filter Pattern
@@ -91,6 +98,30 @@ Use the following text to create a metric filter that matches for any 404 status
 %\b404\b%
 ```
 
-## Guide
+### 3 - Alerting Using the CloudWatch Metric Filter
 
-### 1. 
+Now let us set up and alarm based on our recent metric filter.
+
+1. Navigate to the newly created metric filter within the `Apache-Access-Logs` Log Group
+2. Select the `404` metric from the metric filter list (_Note: It is the Apache/404 link. Not the first one_). This will bring you to the CloudWatch metrics screen.
+3. Click the calendar button and select `5 minutes` from the dropdown. This narrows down the time viewed on the graph.
+4. Next, click on the down arrow by the refresh button and select `10 seconds`. This will automatically refresh the graph every 10 seconds for you.
+5. Navigate to the web server URL again, and then navigate to the same made up page as before (**Example**: http://3.87.13.214/fake.html)
+6. After a bit of time you should begin to see metrics appear on the graph (_This could take up to 5 minutes_)
+7. From here, select `Create alarm`
+8. Leave all the defaults for the _Metric_ portion except the **Period**. Change that to `1 minute`.
+9. For the _Conditions_ leave the **Threshold Type** on `Static`
+10. Set the **Whenever 404 is...** to `Greater/Equal`
+11. Set the **than** value to `1`
+12. Click `Next`
+13. For _Notification_, set **Alarm state trigger** to `In alarm`
+14. Under _Send a notification to the following SNS topic_ select `Create new topic`
+15. Give your topic a name, or leave the default
+16. Add an email for the _Email endpoints that will receive the notification…_ input
+17. Click `Create topic`
+18. You will need to confirm the subscription in you inbox before continuing
+19. Click on `Next`
+20. For **Alarm name** enter `404-Detections`
+21. Click `Next`
+22. Review the settings and then click `Create alarm`
+23. Wait a few minutes for the data to catchup, and then begin to generate 404 status codes via the made up URL used before. This should trigger your Alarm, sending an SNS message to your email address subscribed to the topic!
