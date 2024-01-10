@@ -119,7 +119,7 @@ Resources:
   ApacheLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: ApacheLogs
+      LogGroupName: Apache-Access-Logs
       RetentionInDays: 1
 
   SystemsManagerEC2Role:
@@ -146,8 +146,9 @@ Resources:
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: !GetAtt ApacheLogGroup.Arn
-
+                  - logs:CreateLogGroup
+                Resource:
+                  - !GetAtt ApacheLogGroup.Arn
       Tags:
         - Key: Name
           Value: SystemsManagerEC2Role
