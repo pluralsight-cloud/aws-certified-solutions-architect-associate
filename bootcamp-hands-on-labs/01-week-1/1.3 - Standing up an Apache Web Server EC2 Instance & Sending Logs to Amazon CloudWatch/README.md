@@ -45,3 +45,11 @@ Start the agent with the new config file:
 ```bash
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/tmp/cloudwatch-agent-config.json -s
 ```
+
+### 4. Setting up the CloudWatch Metric Filter
+
+Use the following text to create a metric filter that matches for any 404 status codes
+
+```bash
+%\b404\b%
+```
