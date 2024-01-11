@@ -111,14 +111,15 @@ Now let us set up and alarm based on our recent metric filter.
 5. Navigate to the web server URL again, and then navigate to the same made up page as before (**Example**: http://3.87.13.214/fake.html)
 6. After a bit of time you should begin to see metrics appear on the graph (_This could take up to 5 minutes_)
 7. From here, select `Create alarm`
-8. Leave all the defaults for the _Metric_ portion except the **Period**. Change that to `1 minute`.
+8. Only change two settings from the _Metric_ pane. The first is the **Period**. Change that to `1 minute`.
+9. The second setting to change is **Statistic** should be `Sum`.
 9. For the _Conditions_ leave the **Threshold Type** on `Static`
 10. Set the **Whenever 404 is...** to `Greater/Equal`
-11. Set the **than** value to `1`
+11. Set the **than** value to `0`
 12. Click `Next`
 13. For _Notification_, set **Alarm state trigger** to `In alarm`
 14. Under _Send a notification to the following SNS topic_ select `Create new topic`
-15. Give your topic a name, or leave the default
+15. Give your topic a name of `404-Alerts`
 16. Add an email for the _Email endpoints that will receive the notification…_ input
 17. Click `Create topic`
 18. You will need to confirm the subscription in you inbox before continuing

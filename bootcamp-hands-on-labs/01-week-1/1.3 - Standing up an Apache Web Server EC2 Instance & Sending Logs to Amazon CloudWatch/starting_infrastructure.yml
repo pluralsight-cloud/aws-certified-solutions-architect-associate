@@ -1,5 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Create a VPC with EC2 instance and IAM role for Systems Manager in us-east-1. No key pairs.
+Description: >
+  Create a VPC with EC2 instance and IAM role for Systems Manager in us-east-1. No key pairs.
+  Creates a Log Group for Apache Access Logs.
 
 Parameters:
   LatestAmiId:
