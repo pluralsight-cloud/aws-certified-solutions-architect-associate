@@ -1,4 +1,4 @@
-# Deploying a Serverless Application Using AWS Lambda, API Gateway, and DynamoDB
+# Standing Up an Amazon Aurora Database with an Automatically Rotated Password
 
 ---
 

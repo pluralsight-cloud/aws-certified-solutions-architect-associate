@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create an S3 bucket with a 'randomized' name.
+
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub
+        - '${RandomString}${StackIdShort}${AccountIdShort}'
+        - StackIdShort: !Select [5, !Split ['-', !Ref 'AWS::StackId']]
+          AccountIdShort: !Ref 'AWS::AccountId'
+          RandomString: 'csaa-ps-'
+
+Outputs:
+  BucketName:
+    Description: Name of the S3 bucket
+    Value: !Ref MyBucket

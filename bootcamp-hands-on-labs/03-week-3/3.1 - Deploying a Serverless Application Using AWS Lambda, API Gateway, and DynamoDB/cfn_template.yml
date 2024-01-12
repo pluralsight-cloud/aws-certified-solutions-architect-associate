@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template to create a DynamoDB table with a unique name.
+Description: CloudFormation template to create a DynamoDB table with a unique name if desired.
 
 Resources:
   MyDynamoDBTable:
