@@ -140,6 +140,7 @@ Resources:
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
+      InstanceProfileName: OurSystemsManagerEC2Profile
       Roles:
         - !Ref SystemsManagerEC2Role
 
@@ -157,8 +158,10 @@ Resources:
       UserData:
         Fn::Base64: |
           #!/bin/bash
-          yum update -y
-          yum install -y httpd
+          sudo yum update -y
+          sudo yum install -y httpd
+          sudo amazon-linux-extras install epel -y
+          sudo yum install -y stress
 
           # Starting and enabling HTTPD service
           systemctl start httpd.service

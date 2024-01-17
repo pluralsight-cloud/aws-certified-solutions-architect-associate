@@ -158,6 +158,7 @@ Resources:
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
+      InstanceProfileName: OurSystemsManagerEC2Profile
       Roles:
         - !Ref SystemsManagerEC2Role
 
