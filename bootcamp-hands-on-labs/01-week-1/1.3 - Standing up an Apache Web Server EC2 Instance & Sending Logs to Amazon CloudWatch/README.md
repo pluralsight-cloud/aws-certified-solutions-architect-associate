@@ -76,7 +76,7 @@ Now let us st up a metric filter within CloudWatch using this new log stream!
 3. End the tailing session, and navigate to the `Apache-Access-Logs` Log Group.
 4. On the bottom pane, find and select `Metric filters`
 5. Select `Create metric filter`
-6. For the *Filter pattern* enter the pattern from below: [Metric Filter Patter](#metric-filter-pattern)
+6. For the *Filter pattern* enter the pattern from below: [Metric Filter Pattern](#metric-filter-pattern)
 7. Under the _Test pattern_ section, select your Instance ID from the `Select log data to test` dropdown
 8. Select `Test pattern`. You should get filtered results.
 9. Click `Next`

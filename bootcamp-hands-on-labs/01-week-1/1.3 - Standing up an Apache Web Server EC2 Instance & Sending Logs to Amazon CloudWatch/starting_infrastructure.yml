@@ -176,7 +176,7 @@ Resources:
         Fn::Base64: |
           #!/bin/bash
           yum update -y
-          yum install -y httpd
+          yum install -y httpd stress
 
           # Starting and enabling HTTPD service
           systemctl start httpd.service
