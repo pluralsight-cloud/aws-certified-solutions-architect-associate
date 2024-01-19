@@ -7,9 +7,99 @@ Resources:
     Properties:
       BucketName: !Sub
         - '${RandomString}${StackIdShort}${AccountIdShort}'
-        - StackIdShort: !Select [5, !Split ['-', !Ref 'AWS::StackId']]
+        - StackIdShort: !Select [ 5, !Split [ '-', !Ref 'AWS::StackId' ] ]
           AccountIdShort: !Ref 'AWS::AccountId'
           RandomString: 'csaa-ps-'
+
+  MyLambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: index.lambda_handler
+      Role: !GetAtt MyLambdaRole.Arn
+      FunctionName: RandomFileLambdaFunction
+      Runtime: python3.10
+      Timeout: 60
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import random
+          import string
+          import tempfile
+          import os
+          
+          def lambda_handler(event, context):
+              bucket_name = "${MyBucket}"
+          
+              # Generate a random text content
+              random_content = ''.join(random.choices(string.ascii_letters + string.digits, k=100))
+          
+              # Create a temporary file with random content
+              with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+                  temp_file.write(random_content)
+          
+              # Upload 5 temporary files to S3
+              s3_client = boto3.client('s3')
+              file_list = []
+              for x in range(6):
+                  s3_key = f'important_file_{random.randint(1, 1000)}.txt'  # Adjust the key as needed
+                  s3_client.upload_file(temp_file.name, bucket_name, s3_key)
+                  file_list.append(s3_key)
+          
+              # Clean up the temporary file
+              os.remove(temp_file.name)
+          
+              return {
+                'statusCode': 200,
+                'body': f'File list uploaded to S3: {file_list}'
+              }
+
+  MyLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                Resource: !Sub 'arn:aws:s3:::${MyBucket}/*'
+        - PolicyName: LambdaLogsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MyLambdaFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt MyEventBridgeRule.Arn
+
+  MyEventBridgeRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Name: LambdaEventBridgeRule
+      ScheduleExpression: 'rate(1 day)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt MyLambdaFunction.Arn
+          Id: 'TargetFunction'
 
 Outputs:
   BucketName:
