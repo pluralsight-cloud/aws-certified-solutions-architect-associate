@@ -294,10 +294,39 @@ Resources:
       Roles:
         - !Ref SystemsManagerEC2Role
 
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+        - !Ref PublicSubnet3
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      Scheme: internet-facing
+      Type: application
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Port: 80
+      Protocol: HTTP
+
+  MyListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
   MyAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
-      DesiredCapacity: 2
+      DesiredCapacity: 3
       MaxSize: 3
       MinSize: 1
       VPCZoneIdentifier:
@@ -307,6 +336,10 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 30
 
   LaunchTemplate:
     Type: 'AWS::EC2::LaunchTemplate'
@@ -321,7 +354,7 @@ Resources:
         Monitoring:
           Enabled: true
         SecurityGroupIds:
-          - !Ref MySecurityGroup
+          - !Ref Ec2SecurityGroup
         UserData:
           Fn::Base64: |
             #!/bin/bash
@@ -346,14 +379,43 @@ Resources:
             # Restarting HTTPD service to enforce new index.html just to be safe.
             systemctl restart httpd.service
 
-  MySecurityGroup:
+  AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VPC
-      GroupDescription: Enable HTTP access from within VPC
-      GroupName: AllowHttpFromVPC
+      GroupDescription: Enable HTTP access from internet
+      GroupName: AllowHttpFromEverywhere
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: "80"
           ToPort: "80"
-          CidrIp: !GetAtt VPC.CidrBlock
+          CidrIp: 0.0.0.0/0
+
+  NlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable TCP access from internet
+      GroupName: AllowTCPFromEverywhere
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: 0.0.0.0/0
+
+  Ec2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTP access from within VPC
+      GroupName: AllowHttpFromALB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: "80"
+          ToPort: "80"
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+
+Outputs:
+  LoadBalancerDNSName:
+    Description: DNS Name of the ALB
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
