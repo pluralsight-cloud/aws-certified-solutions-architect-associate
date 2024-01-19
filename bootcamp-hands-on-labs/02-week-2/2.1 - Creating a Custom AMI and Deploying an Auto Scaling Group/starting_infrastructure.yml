@@ -1,7 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   Create a VPC with EC2 instance and IAM role for Systems Manager in us-east-1. No key pairs.
-  Creates a Log Group for Apache Access Logs.
 
 Parameters:
   LatestAmiId:
@@ -15,6 +14,9 @@ Resources:
       CidrBlock: "10.0.0.0/16"
       EnableDnsHostnames: true
       EnableDnsSupport: true
+      Tags:
+        - Key: "Name"
+          Value: "Your Custom VPC"
 
   PublicSubnet1:
     Type: "AWS::EC2::Subnet"
@@ -64,6 +66,54 @@ Resources:
           - Fn::GetAZs:
               Ref: "AWS::Region"
 
+  PrivateSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.10.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Subnet AZ A"
+      AvailabilityZone:
+        Fn::Select:
+          - "0"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  PrivateSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.11.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Subnet AZ B"
+      AvailabilityZone:
+        Fn::Select:
+          - "1"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  PrivateSubnet3:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.12.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Subnet AZ C"
+      AvailabilityZone:
+        Fn::Select:
+          - "2"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
   RouteTablePublic:
     Type: "AWS::EC2::RouteTable"
     Properties:
@@ -106,6 +156,84 @@ Resources:
       GatewayId:
         Ref: "Igw"
 
+  RouteTablePrivate1:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Route Table A"
+
+  RouteTablePrivate1Association1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate1"
+      SubnetId:
+        Ref: "PrivateSubnet1"
+
+  RouteTablePrivate1Route0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePrivate1"
+      NatGatewayId:
+        Ref: "NatGw1"
+
+  RouteTablePrivate2:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Route Table B"
+
+  RouteTablePrivate2Association1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate2"
+      SubnetId:
+        Ref: "PrivateSubnet2"
+
+  RouteTablePrivate2Route0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePrivate2"
+      NatGatewayId:
+        Ref: "NatGw1"
+
+  RouteTablePrivate3:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Route Table C"
+
+  RouteTablePrivate3Association1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate3"
+      SubnetId:
+        Ref: "PrivateSubnet3"
+
+  RouteTablePrivate3Route0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePrivate3"
+      NatGatewayId:
+        Ref: "NatGw1"
+
   Igw:
     Type: "AWS::EC2::InternetGateway"
     Properties: { }
@@ -117,6 +245,24 @@ Resources:
         Ref: "VPC"
       InternetGatewayId:
         Ref: "Igw"
+
+  NatGw1:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      SubnetId:
+        Ref: "PublicSubnet1"
+      AllocationId:
+        Fn::GetAtt:
+          - "NatGw1ElasticIP"
+          - "AllocationId"
+      Tags:
+        - Key: "Name"
+          Value: "NAT GW A"
+
+  NatGw1ElasticIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: "vpc"
 
   SystemsManagerEC2Role:
     Type: AWS::IAM::Role

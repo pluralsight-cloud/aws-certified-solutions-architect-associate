@@ -15,6 +15,9 @@ Resources:
       CidrBlock: "10.0.0.0/16"
       EnableDnsHostnames: true
       EnableDnsSupport: true
+      Tags:
+        - Key: "Name"
+          Value: "Your Custom VPC"
 
   PublicSubnet1:
     Type: "AWS::EC2::Subnet"
@@ -64,6 +67,54 @@ Resources:
           - Fn::GetAZs:
               Ref: "AWS::Region"
 
+  PrivateSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.10.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Subnet AZ A"
+      AvailabilityZone:
+        Fn::Select:
+          - "0"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  PrivateSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.11.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Subnet AZ B"
+      AvailabilityZone:
+        Fn::Select:
+          - "1"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  PrivateSubnet3:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.12.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Subnet AZ C"
+      AvailabilityZone:
+        Fn::Select:
+          - "2"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
   RouteTablePublic:
     Type: "AWS::EC2::RouteTable"
     Properties:
@@ -106,6 +157,84 @@ Resources:
       GatewayId:
         Ref: "Igw"
 
+  RouteTablePrivate1:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Route Table A"
+
+  RouteTablePrivate1Association1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate1"
+      SubnetId:
+        Ref: "PrivateSubnet1"
+
+  RouteTablePrivate1Route0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePrivate1"
+      NatGatewayId:
+        Ref: "NatGw1"
+
+  RouteTablePrivate2:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Route Table B"
+
+  RouteTablePrivate2Association1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate2"
+      SubnetId:
+        Ref: "PrivateSubnet2"
+
+  RouteTablePrivate2Route0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePrivate2"
+      NatGatewayId:
+        Ref: "NatGw1"
+
+  RouteTablePrivate3:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Private Route Table C"
+
+  RouteTablePrivate3Association1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate3"
+      SubnetId:
+        Ref: "PrivateSubnet3"
+
+  RouteTablePrivate3Route0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePrivate3"
+      NatGatewayId:
+        Ref: "NatGw1"
+
   Igw:
     Type: "AWS::EC2::InternetGateway"
     Properties: { }
@@ -117,6 +246,27 @@ Resources:
         Ref: "VPC"
       InternetGatewayId:
         Ref: "Igw"
+
+  NatGw1:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      SubnetId:
+        Ref: "PublicSubnet1"
+      AllocationId:
+        Fn::GetAtt:
+          - "NatGw1ElasticIP"
+          - "AllocationId"
+      Tags:
+        - Key: "Name"
+          Value: "NAT GW A"
+
+  NatGw1ElasticIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: "vpc"
+      Tags:
+        - Key: "Name"
+          Value: "NAT GW EIP"
 
   SystemsManagerEC2Role:
     Type: AWS::IAM::Role
@@ -140,60 +290,70 @@ Resources:
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
+      InstanceProfileName: OurSystemsManagerEC2Profile
       Roles:
         - !Ref SystemsManagerEC2Role
 
-  EC2Instance:
-    Type: AWS::EC2::Instance
+  MyAutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
-      InstanceType: t3.medium
-      ImageId: !Ref LatestAmiId
-      SecurityGroupIds:
-        - !GetAtt MySecurityGroup.GroupId
-      SubnetId:
-        Ref: PublicSubnet1
-      IamInstanceProfile: !Ref EC2InstanceProfile
-      Monitoring: true
-      UserData:
-        Fn::Base64: |
-          #!/bin/bash
-          yum update -y
-          yum install -y httpd
+      DesiredCapacity: 2
+      MaxSize: 3
+      MinSize: 1
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
 
-          # Starting and enabling HTTPD service
-          systemctl start httpd.service
-          systemctl enable httpd.service
-
-          # Adding HTTPD group and adding cloud_user
-          usermod -a -G www ec2-user
-          usermod -a -G www ssm-user
-
-          # Creating simple index.html file for HTTPD base page
-          echo '<html><h1>Hello Gurus!</h1><h3>I live in this Availability Zone: ' > /var/www/html/index.html
-          curl http://169.254.169.254/latest/meta-data/placement/availability-zone >> /var/www/html/index.html
-          echo '</h3> <h3>I go by this Instance Id: ' >> /var/www/html/index.html
-          curl http://169.254.169.254/latest/meta-data/instance-id >> /var/www/html/index.html
-          echo '</h3></html> ' >> /var/www/html/index.html
-
-          # Restarting HTTPD service to enforce new index.html just to be safe.
-          systemctl restart httpd.service
-      Tags:
-        - Key: Name
-          Value: ApacheWebServer
+  LaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateName: WebServer-lt
+      VersionDescription: 'The best version in the world'
+      LaunchTemplateData:
+        ImageId: !Ref LatestAmiId
+        InstanceType: t3.micro
+        IamInstanceProfile:
+          Name: !Ref EC2InstanceProfile
+        Monitoring:
+          Enabled: true
+        SecurityGroupIds:
+          - !Ref MySecurityGroup
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd
+            
+            # Starting and enabling HTTPD service
+            systemctl start httpd.service
+            systemctl enable httpd.service
+            
+            # Adding HTTPD group and adding cloud_user
+            usermod -a -G www ec2-user
+            usermod -a -G www ssm-user
+            
+            # Creating simple index.html file for HTTPD base page
+            echo '<html><h1>Hello Gurus!</h1><h3>I live in this Availability Zone: ' > /var/www/html/index.html
+            curl http://169.254.169.254/latest/meta-data/placement/availability-zone >> /var/www/html/index.html
+            echo '</h3> <h3>I go by this Instance Id: ' >> /var/www/html/index.html
+            curl http://169.254.169.254/latest/meta-data/instance-id >> /var/www/html/index.html
+            echo '</h3></html> ' >> /var/www/html/index.html
+            
+            # Restarting HTTPD service to enforce new index.html just to be safe.
+            systemctl restart httpd.service
 
   MySecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VPC
-      GroupDescription: Enable HTTP access from anywhere
-      GroupName: AllowHttp
+      GroupDescription: Enable HTTP access from within VPC
+      GroupName: AllowHttpFromVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: "80"
           ToPort: "80"
-          CidrIp: 0.0.0.0/0
-
-Outputs:
-  WebServerDNS:
-    Description: The public DNS address of the web server
-    Value: !GetAtt EC2Instance.PublicDnsName
+          CidrIp: !GetAtt VPC.CidrBlock
