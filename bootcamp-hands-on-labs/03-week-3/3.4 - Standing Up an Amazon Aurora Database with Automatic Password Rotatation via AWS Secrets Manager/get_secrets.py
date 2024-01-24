@@ -1,33 +1,48 @@
 import boto3
 import json
+from botocore.exceptions import ClientError
 
-# Initialize a session using AWS SDK
-session = boto3.session.Session(region_name="us-east-1")
-client = session.client(service_name="secretsmanager")
 
-# Define the secret you want to retrieve
-secret_name = "YourSecretNameHere"  # Replace with your actual secret name
+def get_secret():
+    secret_name = "REPLACE_ME"
+    region_name = "us-east-1"
 
-# Use the client to retrieve the secret
-try:
-    response = client.get_secret_value(SecretId=secret_name)
-    # Error handling omitted for brevity
+    # Create a Secrets Manager client
+    # Initialize a session using AWS SDK
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
 
-    # Decode the secret string and convert to JSON
-    secret = response["SecretString"]
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        raise e
+
+    secret = get_secret_value_response['SecretString']
+
+    # JSON loading secret
     secret_dict = json.loads(secret)
 
-    # Extract the username and password values
+    # Extract the username and password values from the secret
     username = secret_dict["username"]
     password = secret_dict["password"]
 
-    # Set environment variables values
-    DB_USERNAME = username
-    DB_PASSWORD = password
+    # Setting file path for saving current values
+    file_path = "/tmp/secret_values.txt"
+    value_to_write = f"EXPORT MYSQL_USERNAME={username}\nEXPORT MYSQL_PASSWORD={password}"
 
-    # For confirmation (Not to be used in production)
-    print("Copy and paste the following line to export Environment Variables for use:")
-    print(f"export DB_USERNAME={DB_USERNAME} && export DB_PASSWORD='{DB_PASSWORD}'")
+    # Writing values to local text file
+    try:
+        # Open the file in write mode
+        with open(file_path, 'w') as file:
+            # Write the value to the file
+            file.write(value_to_write)
 
-except Exception as e:
-    print(f"Error retrieving secret: {e}")
+        print(f"Value successfully written to file at {file_path}")
+
+    except Exception as e:
+        print(f"Error writing to file: {e}")
