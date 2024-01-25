@@ -1,0 +1,12 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::%REPLACE_WITH_ACCOUNT_ID%:user/cloud_user"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}

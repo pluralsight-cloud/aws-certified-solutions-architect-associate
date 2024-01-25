@@ -1,0 +1,1 @@
+# 1.2 - Creating a CloudTrail Trail and EventBridge Alert for Console Sign-Ins

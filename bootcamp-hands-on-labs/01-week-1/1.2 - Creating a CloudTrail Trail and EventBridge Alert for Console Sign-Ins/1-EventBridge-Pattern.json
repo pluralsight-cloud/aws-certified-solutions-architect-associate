@@ -1,0 +1,13 @@
+{
+  "detail-type": ["AWS Console Sign In via CloudTrail"],
+  "source": ["aws.signin"],
+  "detail": {
+    "userIdentity": {
+      "type": ["IAMUser", "Root"],
+      "arn": [
+        "arn:aws:iam::REPLACE_ME:user/cloud_user",
+        "arn:aws:iam::REPLACE_ME:root"
+      ]
+    }
+  }
+}

@@ -1,0 +1,389 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation to create a VPC, Subnets, ALB and an EC2 instance
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t3.small
+    Description: EC2 instance type
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Resources:
+  MyVPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+  PublicSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.0.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Public Subnet AZ A"
+      AvailabilityZone:
+        Fn::Select:
+          - "0"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+  PublicSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.1.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Public Subnet AZ B"
+      AvailabilityZone:
+        Fn::Select:
+          - "1"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+  PublicSubnet3:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.2.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Public Subnet AZ C"
+      AvailabilityZone:
+        Fn::Select:
+          - "2"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+  PrivateSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.10.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Private Subnet AZ A"
+      AvailabilityZone:
+        Fn::Select:
+          - "0"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+  PrivateSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.11.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Private Subnet AZ B"
+      AvailabilityZone:
+        Fn::Select:
+          - "1"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+  PrivateSubnet3:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.12.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Private Subnet AZ C"
+      AvailabilityZone:
+        Fn::Select:
+          - "2"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+  RouteTablePublic:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Public Route Table"
+  RouteTablePublicAssociation1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePublic"
+      SubnetId:
+        Ref: "PublicSubnet1"
+  RouteTablePublicAssociation2:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePublic"
+      SubnetId:
+        Ref: "PublicSubnet2"
+  RouteTablePublicAssociation3:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePublic"
+      SubnetId:
+        Ref: "PublicSubnet3"
+  RouteTablePublicRoute0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePublic"
+      GatewayId:
+        Ref: "Igw"
+  RouteTablePrivate1:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Private Route Table A"
+  RouteTablePrivate1Association1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate1"
+      SubnetId:
+        Ref: "PrivateSubnet1"
+  RouteTablePrivate1Route0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePrivate1"
+      NatGatewayId:
+        Ref: "NatGw1"
+  RouteTablePrivate2:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Private Route Table B"
+  RouteTablePrivate2Association1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate2"
+      SubnetId:
+        Ref: "PrivateSubnet2"
+  RouteTablePrivate2Route0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePrivate2"
+      NatGatewayId:
+        Ref: "NatGw1"
+  RouteTablePrivate3:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: "Name"
+          Value: "Private Route Table C"
+  RouteTablePrivate3Association1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate3"
+      SubnetId:
+        Ref: "PrivateSubnet3"
+  RouteTablePrivate3Route0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePrivate3"
+      NatGatewayId:
+        Ref: "NatGw1"
+  Igw:
+    Type: "AWS::EC2::InternetGateway"
+    Properties: { }
+  IGWAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      InternetGatewayId:
+        Ref: "Igw"
+  NatGw1:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      SubnetId:
+        Ref: "PublicSubnet1"
+      AllocationId:
+        Fn::GetAtt:
+          - "NatGw1ElasticIP"
+          - "AllocationId"
+      Tags:
+        - Key: "Name"
+          Value: "NAT GW A"
+  NatGw1ElasticIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: vpc
+
+  SystemsManagerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref SystemsManagerRole
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SubnetId: !Ref PrivateSubnet1
+      ImageId: !Ref LatestAmiId
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          # Updating YUM. Installing HTTPD.
+          yum update -y
+          yum install -y httpd.x86_64
+          
+          # Starting and enabling HTTPD
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          
+          # Setting homepage index.html file.
+          cat <<EOF >> /var/www/html/index.html
+          <html>
+          <style>
+          
+          .center {
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
+          width: 50%;
+          }
+            </style>
+            <title>Sooper Dooper LLC</title>
+            <head>
+              <script type = "text/javascript" src="functions.js"></script>
+            </head>
+            <body>
+          <span style="padding-top: 200px;"></span>
+          <img src="https://aestes-ps-static-assets-us-east-1.s3.amazonaws.com/public-assets/ps-logo.png" style="max-width: 400px; display: block; margin-left: auto; margin-right: auto; width: 50%;"/>
+          <span style="padding-top: 100px;"></span>
+            <h1> <center>Hello Cloud Gurus!</center></h1>
+            <p>Random String</p>
+            <p id="randomString"></p>
+            <button onclick="returnRandomString()">Generate random string!</button>
+          </body>
+          <html>
+          EOF
+          
+          cat <<EOF /var/www/html/functions.js
+          function returnRandomString() {
+            const generateRandomString = (length) => {
+                let result = '';
+                const characters =
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                const charactersLength = characters.length;
+                for (let i = 0; i < length; i++) {
+                  result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                }
+                return result;
+              };
+            let randomString = generateRandomString(5);
+            document.getElementById("randomString").innerHTML = randomString;
+            console.log(randomString);
+          }
+          EOF
+          
+          # Restarting HTTPD service.
+          systemctl restart httpd.service
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP to ALB
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow traffic from ALB
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Scheme: internet-facing
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref MyVPC
+      TargetType: instance
+      Targets:
+        - Id: !Ref EC2Instance
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+Outputs:
+  LoadBalancerDNSName:
+    Description: DNS Name of the Load Balancer
+    Value: !GetAtt LoadBalancer.DNSName

@@ -1,0 +1,1 @@
+# Creating a Custom AMI and Deploying an Auto Scaling Group behind an Application Load Balancer

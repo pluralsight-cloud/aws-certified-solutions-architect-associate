@@ -1,0 +1,218 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Create a VPC with EC2 instance and IAM role for Systems Manager in us-east-1. No key pairs.
+  Creates a Log Group for Apache Access Logs.
+
+Parameters:
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
+Resources:
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+
+  PublicSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.0.0/24"
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Public Subnet AZ A"
+      AvailabilityZone:
+        Fn::Select:
+          - "0"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  PublicSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.1.0/24"
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Public Subnet AZ B"
+      AvailabilityZone:
+        Fn::Select:
+          - "1"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  PublicSubnet3:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.2.0/24"
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Public Subnet AZ C"
+      AvailabilityZone:
+        Fn::Select:
+          - "2"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  RouteTablePublic:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Public Route Table"
+
+  RouteTablePublicAssociation1:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePublic"
+      SubnetId:
+        Ref: "PublicSubnet1"
+
+  RouteTablePublicAssociation2:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePublic"
+      SubnetId:
+        Ref: "PublicSubnet2"
+
+  RouteTablePublicAssociation3:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePublic"
+      SubnetId:
+        Ref: "PublicSubnet3"
+
+  RouteTablePublicRoute0:
+    Type: "AWS::EC2::Route"
+    Properties:
+      DestinationCidrBlock: "0.0.0.0/0"
+      RouteTableId:
+        Ref: "RouteTablePublic"
+      GatewayId:
+        Ref: "Igw"
+
+  Igw:
+    Type: "AWS::EC2::InternetGateway"
+    Properties: { }
+
+  IGWAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId:
+        Ref: "VPC"
+      InternetGatewayId:
+        Ref: "Igw"
+
+  ApacheLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: Apache-Access-Logs
+      RetentionInDays: 1
+
+  SystemsManagerEC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: OurSystemsManagerEC2Role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: AllowPutLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:CreateLogGroup
+                Resource:
+                  - !GetAtt ApacheLogGroup.Arn
+      Tags:
+        - Key: Name
+          Value: SystemsManagerEC2Role
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: OurSystemsManagerEC2Profile
+      Roles:
+        - !Ref SystemsManagerEC2Role
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.medium
+      ImageId: !Ref LatestAmiId
+      SecurityGroupIds:
+        - !GetAtt MySecurityGroup.GroupId
+      SubnetId:
+        Ref: PublicSubnet1
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      Monitoring: true
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd stress
+
+          # Starting and enabling HTTPD service
+          systemctl start httpd.service
+          systemctl enable httpd.service
+
+          # Adding HTTPD group and adding cloud_user
+          usermod -a -G www ec2-user
+          usermod -a -G www ssm-user
+
+          # Creating simple index.html file for HTTPD base page
+          echo '<html><h1>Hello Gurus!</h1><h3>I live in this Availability Zone: ' > /var/www/html/index.html
+          curl http://169.254.169.254/latest/meta-data/placement/availability-zone >> /var/www/html/index.html
+          echo '</h3> <h3>I go by this Instance Id: ' >> /var/www/html/index.html
+          curl http://169.254.169.254/latest/meta-data/instance-id >> /var/www/html/index.html
+          echo '</h3></html> ' >> /var/www/html/index.html
+
+          # Restarting HTTPD service to enforce new index.html just to be safe.
+          systemctl restart httpd.service
+      Tags:
+        - Key: Name
+          Value: ApacheWebServer
+
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTP access from anywhere
+      GroupName: AllowHttp
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+  WebServerDNS:
+    Description: The public DNS address of the web server
+    Value: !GetAtt EC2Instance.PublicDnsName
