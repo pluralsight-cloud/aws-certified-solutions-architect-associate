@@ -18,6 +18,7 @@ Resources:
       CidrBlock: "10.0.0.0/16"
       EnableDnsHostnames: true
       EnableDnsSupport: true
+
   PublicSubnet1:
     Type: "AWS::EC2::Subnet"
     Properties:
@@ -33,6 +34,7 @@ Resources:
           - "0"
           - Fn::GetAZs:
               Ref: "AWS::Region"
+
   PublicSubnet2:
     Type: "AWS::EC2::Subnet"
     Properties:
@@ -48,6 +50,7 @@ Resources:
           - "1"
           - Fn::GetAZs:
               Ref: "AWS::Region"
+
   PublicSubnet3:
     Type: "AWS::EC2::Subnet"
     Properties:
@@ -63,6 +66,7 @@ Resources:
           - "2"
           - Fn::GetAZs:
               Ref: "AWS::Region"
+
   PrivateSubnet1:
     Type: "AWS::EC2::Subnet"
     Properties:
@@ -78,6 +82,7 @@ Resources:
           - "0"
           - Fn::GetAZs:
               Ref: "AWS::Region"
+
   PrivateSubnet2:
     Type: "AWS::EC2::Subnet"
     Properties:
@@ -93,6 +98,7 @@ Resources:
           - "1"
           - Fn::GetAZs:
               Ref: "AWS::Region"
+
   PrivateSubnet3:
     Type: "AWS::EC2::Subnet"
     Properties:
@@ -108,6 +114,7 @@ Resources:
           - "2"
           - Fn::GetAZs:
               Ref: "AWS::Region"
+
   RouteTablePublic:
     Type: "AWS::EC2::RouteTable"
     Properties:
@@ -116,6 +123,7 @@ Resources:
       Tags:
         - Key: "Name"
           Value: "Public Route Table"
+
   RouteTablePublicAssociation1:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
@@ -123,6 +131,7 @@ Resources:
         Ref: "RouteTablePublic"
       SubnetId:
         Ref: "PublicSubnet1"
+
   RouteTablePublicAssociation2:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
@@ -130,6 +139,7 @@ Resources:
         Ref: "RouteTablePublic"
       SubnetId:
         Ref: "PublicSubnet2"
+
   RouteTablePublicAssociation3:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
@@ -137,6 +147,7 @@ Resources:
         Ref: "RouteTablePublic"
       SubnetId:
         Ref: "PublicSubnet3"
+
   RouteTablePublicRoute0:
     Type: "AWS::EC2::Route"
     Properties:
@@ -145,6 +156,7 @@ Resources:
         Ref: "RouteTablePublic"
       GatewayId:
         Ref: "Igw"
+
   RouteTablePrivate1:
     Type: "AWS::EC2::RouteTable"
     Properties:
@@ -153,6 +165,7 @@ Resources:
       Tags:
         - Key: "Name"
           Value: "Private Route Table A"
+
   RouteTablePrivate1Association1:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
@@ -160,6 +173,7 @@ Resources:
         Ref: "RouteTablePrivate1"
       SubnetId:
         Ref: "PrivateSubnet1"
+
   RouteTablePrivate1Route0:
     Type: "AWS::EC2::Route"
     Properties:
@@ -168,6 +182,7 @@ Resources:
         Ref: "RouteTablePrivate1"
       NatGatewayId:
         Ref: "NatGw1"
+
   RouteTablePrivate2:
     Type: "AWS::EC2::RouteTable"
     Properties:
@@ -176,6 +191,7 @@ Resources:
       Tags:
         - Key: "Name"
           Value: "Private Route Table B"
+
   RouteTablePrivate2Association1:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
@@ -183,6 +199,7 @@ Resources:
         Ref: "RouteTablePrivate2"
       SubnetId:
         Ref: "PrivateSubnet2"
+
   RouteTablePrivate2Route0:
     Type: "AWS::EC2::Route"
     Properties:
@@ -191,6 +208,7 @@ Resources:
         Ref: "RouteTablePrivate2"
       NatGatewayId:
         Ref: "NatGw1"
+
   RouteTablePrivate3:
     Type: "AWS::EC2::RouteTable"
     Properties:
@@ -199,6 +217,7 @@ Resources:
       Tags:
         - Key: "Name"
           Value: "Private Route Table C"
+
   RouteTablePrivate3Association1:
     Type: "AWS::EC2::SubnetRouteTableAssociation"
     Properties:
@@ -206,6 +225,7 @@ Resources:
         Ref: "RouteTablePrivate3"
       SubnetId:
         Ref: "PrivateSubnet3"
+
   RouteTablePrivate3Route0:
     Type: "AWS::EC2::Route"
     Properties:
@@ -214,9 +234,11 @@ Resources:
         Ref: "RouteTablePrivate3"
       NatGatewayId:
         Ref: "NatGw1"
+
   Igw:
     Type: "AWS::EC2::InternetGateway"
     Properties: { }
+
   IGWAttachment:
     Type: "AWS::EC2::VPCGatewayAttachment"
     Properties:
@@ -224,6 +246,7 @@ Resources:
         Ref: MyVPC
       InternetGatewayId:
         Ref: "Igw"
+
   NatGw1:
     Type: "AWS::EC2::NatGateway"
     Properties:
@@ -236,6 +259,7 @@ Resources:
       Tags:
         - Key: "Name"
           Value: "NAT GW A"
+
   NatGw1ElasticIP:
     Type: "AWS::EC2::EIP"
     Properties:
@@ -310,7 +334,7 @@ Resources:
           <html>
           EOF
           
-          cat <<EOF /var/www/html/functions.js
+          cat <<EOF > /var/www/html/functions.js
           function returnRandomString() {
             const generateRandomString = (length) => {
                 let result = '';
@@ -356,6 +380,7 @@ Resources:
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
+      Name: OurLoadBalancer
       Subnets:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
