@@ -1,5 +1,7 @@
 # 4.4 - Hosting a Wordpress Application on ECS Fargate with RDS DB and Parameter Store
 
+> WORK IN PROGRESS. LIKELY TO BE REMOVED OR CHANGED.
+
 ## Create the RDS Database
 
 1. Navigate to the Amazon RDS service.
