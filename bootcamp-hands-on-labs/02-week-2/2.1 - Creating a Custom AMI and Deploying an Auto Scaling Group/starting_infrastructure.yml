@@ -313,10 +313,6 @@ Resources:
           systemctl start httpd.service
           systemctl enable httpd.service
 
-          # Adding HTTPD group and adding cloud_user
-          usermod -a -G www ec2-user
-          usermod -a -G www ssm-user
-
           # Creating simple index.html file for HTTPD base page
           echo '<html><h1>Hello Gurus!</h1><h3>I live in this Availability Zone: ' > /var/www/html/index.html
           curl http://169.254.169.254/latest/meta-data/placement/availability-zone >> /var/www/html/index.html
