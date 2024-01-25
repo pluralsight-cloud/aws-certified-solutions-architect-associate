@@ -3,7 +3,7 @@ from botocore.exceptions import ClientError
 import random
 import os
 
-TABLE_NAME = os.getenv("TABLE_NAME")
+TABLE_NAME = os.getenv("TABLE_NAME", default="Quotes")
 
 
 def lambda_handler(event, context):
