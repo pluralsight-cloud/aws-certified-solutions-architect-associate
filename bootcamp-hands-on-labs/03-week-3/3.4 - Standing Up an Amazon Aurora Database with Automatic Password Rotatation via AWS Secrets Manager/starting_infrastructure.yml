@@ -346,6 +346,19 @@ Resources:
               - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: MySecretsManagerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:ListSecrets
+                  - secretsmanager:ListSecretVersionIds
+                  - secretsmanager:RotateSecret
+                Resource: '*'
       Tags:
         - Key: Name
           Value: SystemsManagerEC2Role
@@ -361,8 +374,8 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VPC
-      GroupDescription: Enable HTTP access from anywhere
-      GroupName: AllowHttp
+      GroupDescription: Enable all access from VPC
+      GroupName: AllowAllVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 0
