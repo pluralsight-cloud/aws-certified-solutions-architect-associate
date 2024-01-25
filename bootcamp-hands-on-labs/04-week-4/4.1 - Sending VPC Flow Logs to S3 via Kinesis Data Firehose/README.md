@@ -1,5 +1,7 @@
 # 4.1 - Sending VPC Flow Logs to S3 via Kinesis Data Firehose
 
+> WORK IN PROGRESS. LIKELY WILL BE REMOVED
+
 ## Athena 
 
 ### Create table
