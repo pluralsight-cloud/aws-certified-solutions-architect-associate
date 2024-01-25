@@ -4,7 +4,7 @@ import http.client
 import json
 import os
 
-TABLE_NAME = os.getenv("TABLE_NAME")
+TABLE_NAME = os.getenv("TABLE_NAME", default="Quotes")
 
 
 def get_quote():
