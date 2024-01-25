@@ -334,7 +334,7 @@ Resources:
           <html>
           EOF
           
-          cat <<EOF /var/www/html/functions.js
+          cat <<EOF > /var/www/html/functions.js
           function returnRandomString() {
             const generateRandomString = (length) => {
                 let result = '';
@@ -380,6 +380,7 @@ Resources:
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
+      Name: OurLoadBalancer
       Subnets:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
