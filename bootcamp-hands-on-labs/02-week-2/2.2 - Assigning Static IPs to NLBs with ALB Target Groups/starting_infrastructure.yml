@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Create a VPC with EC2 instance and IAM role for Systems Manager in us-east-1. No key pairs.
-  Creates a Log Group for Apache Access Logs.
+  Create a VPC with an Auto Scaling Group of EC2 instances. Fronts the ASG with an Application Load Balancer.
+  Meant for us-east-1. No key pairs, only Session Manager for connecting to EC2.
+  VPC contains Public and Private subnets that span 3-AZ in the Region.
 
 Parameters:
   LatestAmiId:
@@ -297,6 +298,7 @@ Resources:
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
+      Name: OurApplicationLoadBalancer
       Subnets:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
@@ -309,6 +311,7 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
+      Name: WebServer-tg
       VpcId: !Ref VPC
       Port: 80
       Protocol: HTTP
@@ -326,6 +329,7 @@ Resources:
   MyAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
+      AutoScalingGroupName: OurApplicationGroup
       DesiredCapacity: 3
       MaxSize: 3
       MinSize: 1
