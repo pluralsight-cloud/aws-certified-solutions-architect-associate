@@ -1,8 +1,0 @@
-# Run sudo systemctl daemon-reload to reload the systemd configuration.
-sudo systemctl daemon-reload
-
-# Run sudo systemctl enable myflaskapp.service to enable the service.
-sudo systemctl enable myflaskapp.service
-
-# Run sudo systemctl start myflaskapp.service to start the service. 
-sudo systemctl start myflaskapp.service
