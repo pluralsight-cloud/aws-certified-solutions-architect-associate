@@ -83,7 +83,66 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: '*'
 
+  MyApi:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name: MyApi
+
+  MyApiInvokeLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Ref: MyLambdaFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${MyApi}/*/*
+
+  MyApiRootMethod:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: ANY
+      ResourceId:
+        Fn::GetAtt:
+          - MyApi
+          - RootResourceId
+      RestApiId:
+        Ref: MyApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MyLambdaFunction.Arn}/invocations
+
+  MyApiDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn: MyApiInvokeLambdaPermission
+    Properties:
+      RestApiId:
+        Ref: MyApi
+      Description: Deployment for the "v1" stage
+
+  MyApiStage:
+    Type: 'AWS::ApiGateway::Stage'
+    Properties:
+      StageName: v1
+      RestApiId:
+        Ref: MyApi
+      DeploymentId:
+        Ref: MyApiDeployment
+
 Outputs:
   BucketName:
     Description: Name of the S3 bucket
     Value: !Ref MyBucket
+
+  ApiEndpoint:
+    Value:
+      Fn::Sub: https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/
+    Description: URL of the API Gateway endpoint
+
+  StageEndpoint:
+    Value:
+      Fn::Sub: https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/v1
+    Description: URL of the "v1" stage
