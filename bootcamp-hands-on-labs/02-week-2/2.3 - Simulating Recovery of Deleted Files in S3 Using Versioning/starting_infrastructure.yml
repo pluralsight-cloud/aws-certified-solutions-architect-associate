@@ -86,7 +86,7 @@ Resources:
   MyApi:
     Type: 'AWS::ApiGateway::RestApi'
     Properties:
-      Name: MyApi
+      Name: CreateTestFiles
 
   MyApiInvokeLambdaPermission:
     Type: 'AWS::Lambda::Permission'
