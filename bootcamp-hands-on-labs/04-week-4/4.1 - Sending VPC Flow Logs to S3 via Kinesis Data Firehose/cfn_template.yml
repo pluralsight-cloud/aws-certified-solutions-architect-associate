@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
-Description: Creates a new custom VPC with 3 tiers of subnets. One public, two private.
+Description: >
+  Create a VPC with an Auto Scaling Group of EC2 instances. Fronts the ASG with an Application Load Balancer.
+  Meant for us-east-1. No key pairs, only Session Manager for connecting to EC2.
+  VPC contains Public and Private subnets that span 3-AZ in the Region.
 
 Parameters:
   InstanceType:
@@ -339,68 +342,141 @@ Resources:
     Properties:
       Domain: "vpc"
 
-  SystemsManagerRole:
+  SystemsManagerEC2Role:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: OurSystemsManagerEC2Role
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: Name
+          Value: SystemsManagerEC2Role
 
-  InstanceProfile:
+  EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      Path: /
+      InstanceProfileName: OurSystemsManagerEC2Profile
       Roles:
-        - !Ref SystemsManagerRole
+        - !Ref SystemsManagerEC2Role
 
-  EC2Instance:
-    Type: AWS::EC2::Instance
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      InstanceType: !Ref InstanceType
-      IamInstanceProfile: !Ref InstanceProfile
-      SubnetId: !Ref PublicSubnet3
-      ImageId: !Ref LatestAmiId
-      SecurityGroupIds:
-        - !Ref InstanceSecurityGroup
-      UserData:
-        Fn::Base64: |
-          #!/bin/bash
-          yum update -y
-          yum install -y httpd stress
+      Name: OurApplicationLoadBalancer
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+        - !Ref PublicSubnet3
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      Scheme: internet-facing
+      Type: application
 
-          # Starting and enabling HTTPD service
-          systemctl start httpd.service
-          systemctl enable httpd.service
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: WebServer-tg
+      VpcId: !Ref VPC
+      Port: 80
+      Protocol: HTTP
 
-          # Adding HTTPD group and adding cloud_user
-          usermod -a -G www ec2-user
-          usermod -a -G www ssm-user
+  MyListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
 
-          # Creating simple index.html file for HTTPD base page
-          echo '<html><h1>Hello Gurus!</h1><h3>I live in this Availability Zone: ' > /var/www/html/index.html
-          curl http://169.254.169.254/latest/meta-data/placement/availability-zone >> /var/www/html/index.html
-          echo '</h3> <h3>I go by this Instance Id: ' >> /var/www/html/index.html
-          curl http://169.254.169.254/latest/meta-data/instance-id >> /var/www/html/index.html
-          echo '</h3></html> ' >> /var/www/html/index.html
+  MyAutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      AutoScalingGroupName: OurAutoScalingGroup
+      DesiredCapacity: 3
+      MaxSize: 3
+      MinSize: 1
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 30
 
-          # Restarting HTTPD service to enforce new index.html just to be safe.
-          systemctl restart httpd.service
+  LaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateName: WebServer-lt
+      VersionDescription: 'The best web server version in the world'
+      LaunchTemplateData:
+        ImageId: !Ref LatestAmiId
+        InstanceType: t3.micro
+        IamInstanceProfile:
+          Name: !Ref EC2InstanceProfile
+        Monitoring:
+          Enabled: true
+        SecurityGroupIds:
+          - !Ref Ec2SecurityGroup
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd
 
-  InstanceSecurityGroup:
+            # Starting and enabling HTTPD service
+            systemctl start httpd.service
+            systemctl enable httpd.service
+
+            # Creating simple index.html file for HTTPD base page
+            echo '<html><h1>Hello Gurus!</h1><h3>I live in this Availability Zone: ' > /var/www/html/index.html
+            curl http://169.254.169.254/latest/meta-data/placement/availability-zone >> /var/www/html/index.html
+            echo '</h3> <h3>I go by this Instance Id: ' >> /var/www/html/index.html
+            curl http://169.254.169.254/latest/meta-data/instance-id >> /var/www/html/index.html
+            echo '</h3></html> ' >> /var/www/html/index.html
+
+            # Restarting HTTPD service to enforce new index.html just to be safe.
+            systemctl restart httpd.service
+
+  AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP traffic from internet
-      GroupName: AllowAllHTTP
       VpcId: !Ref VPC
+      GroupDescription: Enable HTTP access from internet
+      GroupName: AllowHttpFromEverywhere
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          SourceSecurityGroupId: 0.0.0.0/0
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: 0.0.0.0/0
+
+  Ec2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTP access from ALB Security Group
+      GroupName: AllowHttpFromALB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: "80"
+          ToPort: "80"
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+
+Outputs:
+  LoadBalancerDNSName:
+    Description: DNS Name of the ALB
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
