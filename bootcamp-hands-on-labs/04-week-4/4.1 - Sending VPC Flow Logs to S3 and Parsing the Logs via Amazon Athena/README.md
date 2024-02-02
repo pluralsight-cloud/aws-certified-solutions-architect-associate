@@ -66,5 +66,5 @@ TBLPROPERTIES (
 
 ```sql
 MSCK
-REPAIR TABLE `vpc_flow_logs_db` . `vpc_flow_logs`;
+REPAIR TABLE `vpc_flow_logs`;
 ```
