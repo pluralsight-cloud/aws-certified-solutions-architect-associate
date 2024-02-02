@@ -11,4 +11,4 @@ screen to log back into the console.
 
 > See below for example...
 
-![console sign-in url](./images/url.png "Console Sign-in")
+![Console Sign-in](./images/url.png)
