@@ -2,7 +2,16 @@
 
 ---
 
-# SQL Create Table Command
+## Create SQL Database
+
+```sql
+CREATE
+DATABASE vpc_flow_logs_db;
+```
+
+---
+
+## SQL Create Table Command
 
 This assumes you use the default version fields (_Version 2_)
 
@@ -50,4 +59,12 @@ TBLPROPERTIES (
   'skip.header.line.count'='1'
   )
 ```
-      
+
+---
+
+## Repair Table and Update Partitions
+
+```sql
+MSCK
+REPAIR TABLE `vpc_flow_logs_db` . `vpc_flow_logs`;
+```
