@@ -1,8 +1,4 @@
-# 4.1 - Sending VPC Flow Logs to S3 via Kinesis Data Firehose
-
----
-
-# SQL Create Table Command
+# SQL Create Table
 
 This assumes you use the default version fields (_Version 2_)
 
@@ -50,4 +46,3 @@ TBLPROPERTIES (
   'skip.header.line.count'='1'
   )
 ```
-      
