@@ -391,6 +391,7 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
+      Name: WebServer-tg
       Port: 80
       Protocol: HTTP
       VpcId: !Ref MyVPC
