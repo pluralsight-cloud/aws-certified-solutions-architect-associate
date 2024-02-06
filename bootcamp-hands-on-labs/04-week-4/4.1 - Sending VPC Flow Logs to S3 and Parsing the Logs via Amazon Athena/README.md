@@ -1,6 +1,4 @@
-# 4.1 - Sending VPC Flow Logs to S3 and Parsing the Logs via Amazon Athena
-
----
+# Sending VPC Flow Logs to S3 and Parsing the Logs via Amazon Athena
 
 ## Create SQL Database
 
@@ -67,4 +65,23 @@ TBLPROPERTIES (
 ```sql
 MSCK
 REPAIR TABLE `vpc_flow_logs`;
+```
+
+---
+
+## Fixing Errors
+
+You may run into errors when running the MSCK command. We need to drop the table and database, and then restart.
+
+### Drop Table
+
+```sql
+DROP TABLE vpc_flow_logs;
+```
+
+### Drop Datatabase
+
+```sql
+DROP
+DATABASE vpc_flow_logs_db;
 ```
