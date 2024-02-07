@@ -43,4 +43,4 @@ def put_quote(quote):
 
 
 def lambda_handler(event, context):
-    put_quote(get_quote())
+    return put_quote(get_quote())
