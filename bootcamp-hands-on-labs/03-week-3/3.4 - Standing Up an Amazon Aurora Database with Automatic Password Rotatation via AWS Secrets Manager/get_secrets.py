@@ -32,8 +32,13 @@ def get_secret():
     password = secret_dict["password"]
 
     # Setting file path for saving current values
-    file_path = "/tmp/secret_values.txt"
-    value_to_write = f"EXPORT MYSQL_USERNAME={username}\nEXPORT MYSQL_PASSWORD={password}"
+    file_path = "/tmp/secret_values.sh"
+    value_to_write = f"""
+    #!/bin/bash
+    
+    EXPORT MYSQL_USERNAME={username}
+    EXPORT MYSQL_PASSWORD={password}
+    """
 
     # Writing values to local text file
     try:
@@ -43,6 +48,8 @@ def get_secret():
             file.write(value_to_write)
 
         print(f"Value successfully written to file at {file_path}")
+        print(f"Execute script using 'dto space syntax' to store environment variables outside of shell")
+        print(f"Example: . /tmp/secret_values.sh")
 
     except Exception as e:
         print(f"Error writing to file: {e}")

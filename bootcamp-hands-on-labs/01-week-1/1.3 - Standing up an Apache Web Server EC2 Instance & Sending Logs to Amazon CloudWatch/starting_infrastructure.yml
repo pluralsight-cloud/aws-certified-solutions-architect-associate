@@ -15,6 +15,9 @@ Resources:
       CidrBlock: "10.0.0.0/16"
       EnableDnsHostnames: true
       EnableDnsSupport: true
+      Tags:
+        - Key: "Name"
+          Value: "Your Custom VPC"
 
   PublicSubnet1:
     Type: "AWS::EC2::Subnet"
