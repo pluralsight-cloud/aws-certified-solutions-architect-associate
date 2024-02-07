@@ -22,7 +22,7 @@ def lambda_handler(event, context):
         # Select a random item
         random_item = random.choice(items)
         print(random_item)
-        return f'{random_item["quote"]} -- {random_item["author"]}'
+        return {"statusCode": 200, "body": f'{random_item["quote"]} -- {random_item["author"]}'}
 
     except ClientError as e:
         print(e)
