@@ -36,10 +36,10 @@ def put_quote(quote):
 
     try:
         response = table.put_item(Item=item)
-        return {"statusCode": 200, "body": "Item successfully written to DynamoDB."}
+        return "Quote successfully written to DynamoDB."
     except ClientError as e:
         print(e)
-        return {"statusCode": 500, "body": "Error writing item to DynamoDB."}
+        return "Error writing item to DynamoDB."
 
 
 def lambda_handler(event, context):
