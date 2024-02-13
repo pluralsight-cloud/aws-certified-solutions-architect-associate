@@ -10,7 +10,7 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: "Name"
-          Value: "Your Custom VPC"w
+          Value: "Your Custom VPC"
 
   PublicSubnet1:
     Type: "AWS::EC2::Subnet"
