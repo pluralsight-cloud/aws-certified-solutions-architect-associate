@@ -1,8 +1,9 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation to create a VPC, Subnets, ALB and an EC2 instance
-
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Creates a new custom VPC with 3 tiers of subnets. One public, two private (app and db).
+  Also creates a Cloud9 environment for us to run AWS CLI commands and docker commands.
 Resources:
-  MyVPC:
+  VPC:
     Type: "AWS::EC2::VPC"
     Properties:
       CidrBlock: "10.0.0.0/16"
@@ -16,9 +17,9 @@ Resources:
     Type: "AWS::EC2::Subnet"
     Properties:
       CidrBlock: "10.0.0.0/24"
-      MapPublicIpOnLaunch: false
+      MapPublicIpOnLaunch: true
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Public Subnet AZ A"
@@ -32,9 +33,9 @@ Resources:
     Type: "AWS::EC2::Subnet"
     Properties:
       CidrBlock: "10.0.1.0/24"
-      MapPublicIpOnLaunch: false
+      MapPublicIpOnLaunch: true
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Public Subnet AZ B"
@@ -48,9 +49,9 @@ Resources:
     Type: "AWS::EC2::Subnet"
     Properties:
       CidrBlock: "10.0.2.0/24"
-      MapPublicIpOnLaunch: false
+      MapPublicIpOnLaunch: true
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Public Subnet AZ C"
@@ -66,7 +67,7 @@ Resources:
       CidrBlock: "10.0.10.0/24"
       MapPublicIpOnLaunch: false
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Private Subnet AZ A"
@@ -82,7 +83,7 @@ Resources:
       CidrBlock: "10.0.11.0/24"
       MapPublicIpOnLaunch: false
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Private Subnet AZ B"
@@ -98,10 +99,58 @@ Resources:
       CidrBlock: "10.0.12.0/24"
       MapPublicIpOnLaunch: false
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Private Subnet AZ C"
+      AvailabilityZone:
+        Fn::Select:
+          - "2"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  DatabaseSubnet1:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.20.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Database Subnet AZ A"
+      AvailabilityZone:
+        Fn::Select:
+          - "0"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  DatabaseSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.21.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Database Subnet AZ B"
+      AvailabilityZone:
+        Fn::Select:
+          - "1"
+          - Fn::GetAZs:
+              Ref: "AWS::Region"
+
+  DatabaseSubnet3:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.22.0/24"
+      MapPublicIpOnLaunch: false
+      VpcId:
+        Ref: "VPC"
+      Tags:
+        - Key: "Name"
+          Value: "Database Subnet AZ C"
       AvailabilityZone:
         Fn::Select:
           - "2"
@@ -112,7 +161,7 @@ Resources:
     Type: "AWS::EC2::RouteTable"
     Properties:
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Public Route Table"
@@ -154,7 +203,7 @@ Resources:
     Type: "AWS::EC2::RouteTable"
     Properties:
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Private Route Table A"
@@ -180,7 +229,7 @@ Resources:
     Type: "AWS::EC2::RouteTable"
     Properties:
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Private Route Table B"
@@ -206,7 +255,7 @@ Resources:
     Type: "AWS::EC2::RouteTable"
     Properties:
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       Tags:
         - Key: "Name"
           Value: "Private Route Table C"
@@ -228,6 +277,31 @@ Resources:
       NatGatewayId:
         Ref: "NatGw1"
 
+  # Route Table Associations for Database Subnets
+  RouteTableDatabase1Association:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate1" # Adjust this if needed
+      SubnetId:
+        Ref: "DatabaseSubnet1"
+
+  RouteTableDatabase2Association:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate2" # Adjust this if needed
+      SubnetId:
+        Ref: "DatabaseSubnet2"
+
+  RouteTableDatabase3Association:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId:
+        Ref: "RouteTablePrivate3" # Adjust this if needed
+      SubnetId:
+        Ref: "DatabaseSubnet3"
+
   Igw:
     Type: "AWS::EC2::InternetGateway"
     Properties: { }
@@ -236,7 +310,7 @@ Resources:
     Type: "AWS::EC2::VPCGatewayAttachment"
     Properties:
       VpcId:
-        Ref: MyVPC
+        Ref: "VPC"
       InternetGatewayId:
         Ref: "Igw"
 
@@ -256,153 +330,75 @@ Resources:
   NatGw1ElasticIP:
     Type: "AWS::EC2::EIP"
     Properties:
-      Domain: vpc
+      Domain: "vpc"
 
-  SystemsManagerRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
-
-  InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Path: /
-      Roles:
-        - !Ref SystemsManagerRole
-
-  EC2Instance:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: !Ref InstanceType
-      IamInstanceProfile: !Ref InstanceProfile
-      SubnetId: !Ref PrivateSubnet1
-      ImageId: !Ref LatestAmiId
-      SecurityGroupIds:
-        - !Ref InstanceSecurityGroup
-      UserData:
-        Fn::Base64: |
-          #!/bin/bash
-          # Updating YUM. Installing HTTPD.
-          yum update -y
-          yum install -y httpd.x86_64
-          
-          # Starting and enabling HTTPD
-          systemctl start httpd.service
-          systemctl enable httpd.service
-          
-          # Setting homepage index.html file.
-          cat <<EOF >> /var/www/html/index.html
-          <html>
-          <style>
-          
-          .center {
-          display: block;
-          margin-left: auto;
-          margin-right: auto;
-          width: 50%;
-          }
-            </style>
-            <title>Sooper Dooper LLC</title>
-            <head>
-              <script type = "text/javascript" src="functions.js"></script>
-            </head>
-            <body>
-          <span style="padding-top: 200px;"></span>
-          <img src="https://aestes-ps-static-assets-us-east-1.s3.amazonaws.com/public-assets/ps-logo.png" style="max-width: 400px; display: block; margin-left: auto; margin-right: auto; width: 50%;"/>
-          <span style="padding-top: 100px;"></span>
-            <h1> <center>Hello Cloud Gurus!</center></h1>
-            <p>Random String</p>
-            <p id="randomString"></p>
-            <button onclick="returnRandomString()">Generate random string!</button>
-          </body>
-          <html>
-          EOF
-          
-          cat <<EOF > /var/www/html/functions.js
-          function returnRandomString() {
-            const generateRandomString = (length) => {
-                let result = '';
-                const characters =
-                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-                const charactersLength = characters.length;
-                for (let i = 0; i < length; i++) {
-                  result += characters.charAt(Math.floor(Math.random() * charactersLength));
-                }
-                return result;
-              };
-            let randomString = generateRandomString(5);
-            document.getElementById("randomString").innerHTML = randomString;
-            console.log(randomString);
-          }
-          EOF
-          
-          # Restarting HTTPD service.
-          systemctl restart httpd.service
-
-  ALBSecurityGroup:
+  AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP to ALB
-      VpcId: !Ref MyVPC
+      VpcId: !Ref VPC
+      GroupDescription: Enable HTTP access from internet
+      GroupName: ALBAllowHttp
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: "80"
+          ToPort: "80"
           CidrIp: 0.0.0.0/0
 
-  InstanceSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allow traffic from ALB
-      VpcId: !Ref MyVPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          SourceSecurityGroupId: !Ref ALBSecurityGroup
-
-  LoadBalancer:
+  ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: OurLoadBalancer
+      Name: OurApplicationLoadBalancer
       Subnets:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
+        - !Ref PublicSubnet3
       SecurityGroups:
-        - !Ref ALBSecurityGroup
+        - !Ref AlbSecurityGroup
       Scheme: internet-facing
+      Type: application
 
-  TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  Cloud9Environment:
+    Type: 'AWS::Cloud9::EnvironmentEC2'
     Properties:
-      Name: WebServer-tg
-      Port: 80
-      Protocol: HTTP
-      VpcId: !Ref MyVPC
-      TargetType: instance
-      Targets:
-        - Id: !Ref EC2Instance
+      Name: OurCloud9Environment
+      Description: 'Cloud9 Environment for development'
+      InstanceType: 't3.small'
+      ImageId: 'amazonlinux-2023-x86_64'
+      AutomaticStopTimeMinutes: 60 # stops after 1 hour of inactivity
+      SubnetId: !GetAtt PrivateSubnet3.SubnetId
+      ConnectionType: 'CONNECT_SSM'
+      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloud9-environmentec2.html
 
-  Listener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
+  ECSFargateTaskExecutionRole:
+    Type: AWS::IAM::Role
     Properties:
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref TargetGroup
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: HTTP
+      RoleName: OurEcsTaskExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: AccessSecretsAndParameters
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rds*"
+              - Effect: Allow
+                Action:
+                  - "ssm:GetParameters"
+                Resource:
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/dev/*"
 
-Outputs:
-  LoadBalancerDNSName:
-    Description: DNS Name of the Load Balancer
-    Value: !GetAtt LoadBalancer.DNSName
+Metadata: { }
+Conditions: { }
