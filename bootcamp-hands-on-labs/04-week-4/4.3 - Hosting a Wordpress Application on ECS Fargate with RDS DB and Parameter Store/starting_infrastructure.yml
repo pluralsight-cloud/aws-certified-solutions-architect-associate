@@ -1,16 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: CloudFormation to create a VPC, Subnets, ALB and an EC2 instance
 
-Parameters:
-  InstanceType:
-    Type: String
-    Default: t3.small
-    Description: EC2 instance type
-
-  LatestAmiId:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-
 Resources:
   MyVPC:
     Type: "AWS::EC2::VPC"
@@ -20,7 +10,7 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: "Name"
-          Value: "Your Custom VPC"
+          Value: "Your Custom VPC"w
 
   PublicSubnet1:
     Type: "AWS::EC2::Subnet"
