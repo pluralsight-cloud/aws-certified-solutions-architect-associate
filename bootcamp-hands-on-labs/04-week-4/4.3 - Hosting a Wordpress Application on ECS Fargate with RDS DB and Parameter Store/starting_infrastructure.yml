@@ -357,7 +357,7 @@ Resources:
       Scheme: internet-facing
       Type: application
 
-  Cloud9Environment:
+  AWSCloudCloud9Environment:
     Type: 'AWS::Cloud9::EnvironmentEC2'
     Properties:
       Name: OurCloud9Environment
@@ -367,7 +367,35 @@ Resources:
       AutomaticStopTimeMinutes: 60 # stops after 1 hour of inactivity
       SubnetId: !GetAtt PrivateSubnet3.SubnetId
       ConnectionType: 'CONNECT_SSM'
+      OwnerArn: !Sub 'arn:aws:iam::${AWS::AccountId}:user/cloud_user'
       # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloud9-environmentec2.html
+
+  AWSCloud9SSMAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloud9.amazonaws.com
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: 'Service linked role for AWS Cloud9'
+      Path: '/service-role/'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCloud9SSMInstanceProfile
+      RoleName: 'AWSCloud9SSMAccessRole'
+
+  AWSCloud9SSMInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      InstanceProfileName: AWSCloud9SSMInstanceProfile
+      Path: "/cloud9/"
+      Roles:
+        - Ref: AWSCloud9SSMAccessRole
 
   ECSFargateTaskExecutionRole:
     Type: AWS::IAM::Role
@@ -384,6 +412,35 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: AccessSecretsAndParameters
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rds*"
+              - Effect: Allow
+                Action:
+                  - "ssm:GetParameters"
+                Resource:
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/dev/*"
+
+  ECSFargateTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: OurEcsTaskRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
       Policies:
         - PolicyName: AccessSecretsAndParameters
           PolicyDocument:
