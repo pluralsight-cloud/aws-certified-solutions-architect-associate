@@ -10,7 +10,7 @@ sudo cat <<EOF >>/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.js
     "agent": {
         "metrics_collection_interval": 60,
         "run_as_user": "root",
-        "region": "us-east-1",
+        "region": "{item("meta-data/placement/availability-zone")}",
         "debug": true
     },
     "logs": {
