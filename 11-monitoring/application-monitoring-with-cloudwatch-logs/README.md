@@ -1,16 +1,24 @@
 # Installing and Configuring the Amazon CloudWatch Agent (Linux)
 
-To configure the CloudWatch agent on a Linux instance to send custom application log files to CloudWatch, you need to follow these steps:
+To configure the CloudWatch agent on a Linux instance to send custom application log files to CloudWatch, you need to
+follow these steps:
 
-1. Create an IAM role with the relevant permissions and attach it to the Linux instance. (_see policy below_)
+1. Create an IAM role with the relevant permissions and attach it to the Linux instance. (_see example policy below_)
 2. Install the CloudWatch agent in the instance.
 3. Prepare the Configuration File (Manually).
 4. Start the CloudWatch agent service in the instance (Manually).
 5. Monitor the logs using CloudWatch web console.
 
-## 1 - IAM Policy example
+## 1a - IAM Inline Policy example
 
 **Role Name**: AmazonEC2SessionManagerRole
+
+> **PLEASE READ**: Below is the inline policy content used in the lesson/clip.
+> **You must also attach the `AmazonSSMManagedInstanceCore` AWS-managed policy in addition to this for this to work!**
+
+AmazonSSMManagedInstanceCore Role Arn: `arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore`
+
+### `AllowCloudWatchLogsPut` Inline Policy:
 
 ```json
 {
@@ -24,54 +32,56 @@ To configure the CloudWatch agent on a Linux instance to send custom application
         "logs:PutLogEvents",
         "logs:DescribeLogStreams"
       ],
-      "Resource": ["*"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ssm:DescribeAssociation",
-        "ssm:GetDeployablePatchSnapshotForInstance",
-        "ssm:GetDocument",
-        "ssm:DescribeDocument",
-        "ssm:GetManifest",
-        "ssm:GetParameter",
-        "ssm:GetParameters",
-        "ssm:ListAssociations",
-        "ssm:ListInstanceAssociations",
-        "ssm:PutInventory",
-        "ssm:PutComplianceItems",
-        "ssm:PutConfigurePackageResult",
-        "ssm:UpdateAssociationStatus",
-        "ssm:UpdateInstanceAssociationStatus",
-        "ssm:UpdateInstanceInformation"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ssmmessages:CreateControlChannel",
-        "ssmmessages:CreateDataChannel",
-        "ssmmessages:OpenControlChannel",
-        "ssmmessages:OpenDataChannel"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2messages:AcknowledgeMessage",
-        "ec2messages:DeleteMessage",
-        "ec2messages:FailMessage",
-        "ec2messages:GetEndpoint",
-        "ec2messages:GetMessages",
-        "ec2messages:SendReply"
-      ],
-      "Resource": "*"
+      "Resource": [
+        "*"
+      ]
     }
   ]
 }
 ```
+
+---
+
+## 1b - Creating EC2 Role Walkthrough
+
+Here is a guided walkthrough for creating the IAM Role/Instance Profile used in the course lecture.
+
+1. Navigate to IAM and create a new role
+
+![Step 1](./images/1b/1-create-role.png)
+
+2. Select `AWS service` as the trusted entity type
+
+![Step 2](./images/1b/2-create-role.png)
+
+3. Select `EC2` for the Service and then `EC2 Role for AWS Systems Manager` as the use case
+
+![Step 3](./images/1b/3-create-role.png)
+
+4. Provide your Role name and select `Create` when done
+
+![Step 4](./images/1b/4-create-role.png)
+
+5. Once the Role is created, navigate to it, then select `Add permissions`
+
+![Step 5](./images/1b/5-create-role.png)
+
+6. Select `Create inline policy` from the dropdown menu
+
+![Step 6](./images/1b/6-create-role.png)
+
+7. Select `JSON` on the editor, then paste in
+   the [JSON code from the GitHub repo](./iam_policies/AllowCloudWatchLogsPut-Inline.json)
+
+![Step 7](./images/1b/7-create-role.png)
+
+8. Name your inline policy and create on `Create`
+
+![Step 8](./images/1b/8-create-role.png)
+
+**DONE**
+
+---
 
 ## 2 - Install CloudWatch Agent
 
@@ -126,9 +136,12 @@ EOF
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 ```
 
+---
+
 ## 3 - Prepare the Configuration File (Manually)
 
-If you want to manually implement the file instead of using the above user data script, then here is a sample JSON you can use.
+If you want to manually implement the file instead of using the above user data script, then here is a sample JSON you
+can use.
 
 **File Location:** /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 
@@ -163,6 +176,8 @@ If you want to manually implement the file instead of using the above user data 
 }
 ```
 
+---
+
 ## 4 - Start the CloudWatch agent service in the instance (Manually)
 
 Only needed if you did not run the full user data above.
@@ -178,6 +193,8 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-c
 ```bash
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start -m ec2 -s
 ```
+
+---
 
 ## 5 - Monitor the logs using CloudWatch web console.
 
