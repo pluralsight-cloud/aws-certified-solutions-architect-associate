@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AWSLambdaSQSPollerExecutionRole",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:ReceiveMessage",
+        "sqs:SendMessage",
+        "sqs:ChangeMessageVisibility"
+      ],
+      "Resource": "arn:aws:sqs:us-east-1:<ACCOUNT_ID>:WebOrders"
+    }
+  ]
+}

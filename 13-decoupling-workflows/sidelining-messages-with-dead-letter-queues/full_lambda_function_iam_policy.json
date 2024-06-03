@@ -1,0 +1,32 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "logs:CreateLogGroup",
+      "Resource": "arn:aws:logs:us-east-1:<ACCOUNT_ID>:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": [
+        "arn:aws:logs:us-east-1:<ACCOUNT_ID>:log-group:/aws/lambda/ProcessorFunction:*"
+      ]
+    },
+    {
+      "Sid": "AWSLambdaSQSPollerExecutionRole",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:ReceiveMessage",
+        "sqs:SendMessage",
+        "sqs:ChangeMessageVisibility"
+      ],
+      "Resource": "arn:aws:sqs:us-east-1:<ACCOUNT_ID>:WebOrders"
+    }
+  ]
+}
