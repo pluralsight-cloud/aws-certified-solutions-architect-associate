@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: CloudFormation to create a VPC, Subnets, ALB and an EC2 instance
 
 Parameters:
@@ -240,7 +240,7 @@ Resources:
 
   Igw:
     Type: "AWS::EC2::InternetGateway"
-    Properties: { }
+    Properties: {}
 
   IGWAttachment:
     Type: "AWS::EC2::VPCGatewayAttachment"
@@ -304,16 +304,16 @@ Resources:
           # Updating YUM. Installing HTTPD.
           yum update -y
           yum install -y httpd.x86_64
-          
+
           # Starting and enabling HTTPD
           systemctl start httpd.service
           systemctl enable httpd.service
-          
+
           # Setting homepage index.html file.
           cat <<EOF >> /var/www/html/index.html
           <html>
           <style>
-          
+
           .center {
           display: block;
           margin-left: auto;
@@ -321,13 +321,13 @@ Resources:
           width: 50%;
           }
             </style>
-            <title>Sooper Dooper LLC</title>
+            <title>Check out our site!</title>
             <head>
               <script type = "text/javascript" src="functions.js"></script>
             </head>
             <body>
           <span style="padding-top: 200px;"></span>
-          <img src="https://aestes-ps-static-assets-us-east-1.s3.amazonaws.com/public-assets/ps-logo.png" style="max-width: 400px; display: block; margin-left: auto; margin-right: auto; width: 50%;"/>
+          <img src="https://d31xik8pupf3da.cloudfront.net/public-assets/ps-logo.png" style="max-width: 400px; display: block; margin-left: auto; margin-right: auto; width: 50%;"/>
           <span style="padding-top: 100px;"></span>
             <h1> <center>Hello Cloud Gurus!</center></h1>
             <p>Random String</p>
@@ -336,7 +336,7 @@ Resources:
           </body>
           <html>
           EOF
-          
+
           cat <<EOF > /var/www/html/functions.js
           function returnRandomString() {
             const generateRandomString = (length) => {
@@ -354,7 +354,7 @@ Resources:
             console.log(randomString);
           }
           EOF
-          
+
           # Restarting HTTPD service.
           systemctl restart httpd.service
 
